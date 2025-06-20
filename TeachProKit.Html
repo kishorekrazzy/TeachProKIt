@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher's Edge: Prompt Reactor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!--
+    /=================================================================\
+    |  TEACHER'S EDGE: PROMPT REACTOR                                 |
+    |  =============================================================  |
+    |  DESIGN PHILOSOPHY:                                             |
+    |  The UI now uses a simple, minimal, and professional theme with |
+    |  a clean blue and gray color palette. It maintains the sleek    |
+    |  glassmorphism effect for a modern feel.                        |
+    \=================================================================/
+    -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #e5e7eb;
+            overflow-x: hidden;
+        }
+        #background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: #111827;
+        }
+        #glow-effect {
+            position: fixed;
+            width: 1200px;
+            height: 1200px;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0) 50%);
+            border-radius: 50%;
+            pointer-events: none;
+            transition: transform 0.2s ease-out;
+            z-index: -1;
+        }
+        .glass-panel {
+            background: rgba(31, 41, 55, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .modal-content {
+             background: rgba(31, 41, 55, 0.95);
+        }
+        input, select, textarea, .input-tag {
+            background-color: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+            --tw-ring-color: #60a5fa;
+        }
+        input:disabled, select:disabled, textarea:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: rgba(55, 65, 81, 0.4);
+        }
+        /* Toggle Switch Styles */
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+        .prebuilt-prompt-item {
+            position: relative;
+        }
+        .copy-prebuilt-btn {
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .prebuilt-prompt-item:hover .copy-prebuilt-btn {
+            opacity: 1;
+        }
+        .social-icon {
+             transition: transform 0.2s ease, color 0.2s ease;
+        }
+        .social-icon:hover {
+            transform: scale(1.2);
+            color: #60a5fa; /* blue-400 */
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(96, 165, 250, 0.5); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(96, 165, 250, 0.8); }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #timetable-print-area, #timetable-print-area * {
+                visibility: visible;
+            }
+            #timetable-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            table {
+                color: black !important;
+                border-color: #666 !important;
+            }
+            th, td {
+                border-color: #666 !important;
+                background-color: white !important;
+            }
+            .lunch-period {
+                 background-color: #e5e7eb !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="background-container"></div>
+    <div id="glow-effect"></div>
+    
+    <header class="glass-panel sticky top-0 z-40">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <div class="logo font-bold text-xl text-white">
+                Teach<span class="text-blue-400">ProKit</span>
+            </div>
+            <div class="motivational-quote text-sm text-gray-400 italic text-right hidden md:block">
+                <p id="quote-display"></p>
+            </div>
+        </div>
+    </header>
+
+    <main class="relative z-10">
+        <div class="text-center pt-10 px-4">
+            <h1 class="text-4xl md:text-5xl font-bold text-white">Prompt<span class="text-blue-400">Creator</span></h1>
+            <p class="text-gray-400 mt-2">The Ultimate Toolkit for Rebellious Educators</p>
+        </div>
+
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+            <section id="custom-generator" class="mb-12 glass-panel p-6 rounded-2xl">
+                <h2 class="text-3xl font-bold text-center text-white mb-6">Prompt <span class="text-blue-400">Synthesizer</span></h2>
+                 <div id="synthesizer-filters" class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5 mb-6">
+                    <!-- Filters will be injected here by JavaScript -->
+                 </div>
+                <button id="customGenerateBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all transform hover:scale-105 duration-300">
+                    ✨ Synthesize Prompt
+                </button>
+                <div id="custom-output-container" class="mt-6 hidden">
+                     <div class="relative flex-grow">
+                        <textarea id="custom-output-text" readonly class="w-full h-48 p-4 rounded-lg resize-none"></textarea>
+                        <button id="copyCustomBtn" class="absolute top-3 right-3 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105">Copy</button>
+                    </div>
+                </div>
+            </section>
+
+            <div class="mb-8 p-4 glass-panel rounded-2xl">
+                <h3 class="text-2xl font-bold text-center text-white mb-4">Utility <span class="text-blue-400">Tools</span></h3>
+                <div class="flex justify-center mb-6">
+                    <button id="openTimetableBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl text-lg transition-all transform hover:scale-105 duration-300">
+                        📅 Generate Timetable
+                    </button>
+                </div>
+                 <div id="prebuilt-prompts-container" class="mt-6">
+                    <h3 class="text-2xl font-bold text-center text-white mb-4">Pre-Built <span class="text-blue-400">Prompts</span></h3>
+                    <div id="prebuilt-prompts-grid" class="space-y-2">
+                        <!-- Pre-built prompts will be injected here -->
+                    </div>
+                </div>
+            </div>
+        
+        </div>
+    </main>
+    
+    <!-- Timetable Modal -->
+    <div id="timetableModal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+        <div class="modal-content glass-panel rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] flex flex-col transform scale-95 opacity-0">
+            <header class="p-4 flex justify-between items-center border-b border-white/10">
+                <h2 class="text-2xl font-bold text-blue-300">Timetable Generator</h2>
+                <button id="closeTimetableModalBtn" class="text-gray-400 hover:text-white text-4xl">&times;</button>
+            </header>
+            <div class="p-6 overflow-y-auto flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Inputs Column -->
+                <div class="lg:col-span-1 space-y-4">
+                    <div>
+                        <label for="workDays" class="block text-sm font-medium text-blue-300 mb-1">Working Days</label>
+                        <input type="number" id="workDays" value="5" min="1" max="7" class="w-full p-2 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="periodsPerDay" class="block text-sm font-medium text-blue-300 mb-1">Periods per Day</label>
+                        <input type="number" id="periodsPerDay" value="8" min="1" class="w-full p-2 rounded-lg">
+                    </div>
+                     <div>
+                        <label for="lunchPeriod" class="block text-sm font-medium text-blue-300 mb-1">Lunch/Break Period</label>
+                        <select id="lunchPeriod" class="w-full p-2 rounded-lg">
+                            <option value="0">No Break</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="subjectsInput" class="block text-sm font-medium text-blue-300 mb-1">Subjects & Weekly Frequency</label>
+                        <textarea id="subjectsInput" class="w-full h-24 p-2 rounded-lg resize-none" placeholder="Subject: 5&#10;Science: 4&#10;History: 3">Math: 5, English: 5, Science: 4, History: 3, Geography: 3, Art: 2, Music: 2, PE: 2</textarea>
+                         <p class="text-xs text-gray-400 mt-1">Format: Subject: Periods per week. One per line or comma-separated.</p>
+                    </div>
+                    <div>
+                        <label for="teachersInput" class="block text-sm font-medium text-blue-300 mb-1">Teachers & Subjects They Teach</label>
+                        <textarea id="teachersInput" class="w-full h-24 p-2 rounded-lg resize-none" placeholder="Mr. Smith: Math, Science&#10;Ms. Jones: English, History">Mr. Smith: Math, Science, PE
+Ms. Jones: English, History
+Mrs. Davis: Geography, Art
+Mr. Lee: Music, English
+</textarea>
+                        <p class="text-xs text-gray-400 mt-1">Format: Teacher: Subject1, Subject2. One per line.</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="generateTimetableBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-all">Generate</button>
+                        <button id="printTimetableBtn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-xl transition-all">Print</button>
+                    </div>
+                </div>
+                <!-- Timetable Display Column -->
+                <div id="timetable-print-area" class="lg:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-white/10">
+                    <h3 class="text-xl font-bold text-white mb-4 text-center">Class Schedule</h3>
+                    <div id="timetableOutput" class="overflow-x-auto">
+                        <p class="text-gray-400 text-center">Enter details and click "Generate" to create a timetable.</p>
+                    </div>
+                     <div id="unscheduled-classes" class="mt-4 text-center"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="mt-16 glass-panel">
+        <div class="container mx-auto px-8 py-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+            <div>
+                <h3 class="font-bold text-lg mb-2 text-blue-300">About Teacher's Edge</h3>
+                <p class="text-sm text-gray-400">
+                    This tool is designed to empower educators with powerful, creative, and effective AI-driven strategies for the modern classroom.
+                </p>
+            </div>
+            <div class="md:mx-auto">
+                <h3 class="font-bold text-lg mb-2 text-blue-300">Connect</h3>
+                <div class="flex justify-center md:justify-start space-x-6 text-gray-400">
+                    <a href="https://www.instagram.com/kishoreditx/" class="social-icon" aria-label="Instagram">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="6" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor"/></svg>
+                    </a>
+                    <a href="https://kishorekrazzy.github.io/Resume/" class="social-icon" aria-label="Profile">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="9" r="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 19c0-3.3137 3.134-6 8-6s8 2.6863 8 6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                    </a>
+                </div>
+            </div>
+            <div class="md:text-right">
+                <h3 class="font-bold text-lg mb-2 text-blue-300">Made with 🧠</h3>
+                <p class="text-sm text-gray-400">
+                    &copy; Kishoreditx. All Rights Reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+
+    <script>
+        // --- DOM ELEMENTS ---
+        const backgroundGlow = document.getElementById('glow-effect');
+        const synthesizerFilters = document.getElementById('synthesizer-filters');
+        // Synthesizer Elements
+        const customGenerateBtn = document.getElementById('customGenerateBtn');
+        const copyCustomBtn = document.getElementById('copyCustomBtn');
+        const customOutputContainer = document.getElementById('custom-output-container');
+        const customOutputText = document.getElementById('custom-output-text');
+        // Timetable Modal Elements
+        const openTimetableBtn = document.getElementById('openTimetableBtn');
+        const timetableModal = document.getElementById('timetableModal');
+        const closeTimetableModalBtn = document.getElementById('closeTimetableModalBtn');
+        const generateTimetableBtn = document.getElementById('generateTimetableBtn');
+        const printTimetableBtn = document.getElementById('printTimetableBtn');
+        const timetableOutput = document.getElementById('timetableOutput');
+        const lunchPeriodSelect = document.getElementById('lunchPeriod');
+        const prebuiltPromptsGrid = document.getElementById('prebuilt-prompts-grid');
+        const quoteDisplay = document.getElementById('quote-display');
+        
+        const prebuiltPrompts = {
+            "📘 Lesson Planning & Curriculum Design": [
+                "Design a complete week-long lesson plan for high school students on [Topic], including objectives, interactive activities, real-life examples, and digital resources. Ensure it aligns with Bloom’s taxonomy and includes differentiated instruction.",
+                "Generate a thematic interdisciplinary unit that combines [Subject A] and [Subject B] for middle school learners. Include project-based learning elements, essential questions, and collaborative tasks.",
+                "Create a concept-based curriculum outline for the entire semester on [Subject/Grade]. Emphasize inquiry-based learning and include assessments for each major concept.",
+                "Summarize the key points of the [Curriculum Framework/Standard] in teacher-friendly language, with a checklist for each topic’s mastery.",
+                "Develop a flipped classroom lesson on [Topic] with a video script, pre-class activities, and in-class collaborative challenges."
+            ],
+            "🎓 Concept Explanation & Simplification": [
+                "Explain the topic of [Complex Concept] to a 7th-grade student using analogies, storytelling, and simple vocabulary.",
+                "Create three levels of explanation for [Topic]: one for beginners, one for intermediate, and one for advanced learners.",
+                "Visualize the concept of [Topic] with a metaphor, a diagram description, and a simple real-world example.",
+                "Rephrase [Technical Paragraph] into easy-to-understand terms for an ESL student in Grade 8.",
+                "Generate a Socratic dialogue where a teacher helps a student discover [Topic] by asking probing questions."
+            ],
+            "✏️ Activity & Worksheet Creation": [
+                "Create a 5-question worksheet on [Topic] that tests both factual knowledge and critical thinking. Include answers and explanations.",
+                "Design a classroom activity that teaches [Skill] using gamification and student movement.",
+                "Generate a printable mind map worksheet for [Topic], with some nodes filled and others left for students to complete.",
+                "Create a scavenger hunt or escape room game around [Topic], including clues, riddles, and learning outcomes.",
+                "Design a role-play classroom simulation where students take on roles related to [Historical/Scientific/Real-world situation]."
+            ],
+             "🎭 Engagement & Creativity Boosters": [
+                "Write an engaging short story that illustrates the concept of [Topic], suitable for 10-12-year-olds.",
+                "Generate 5 creative writing prompts related to [Topic] that encourage imagination and connection to personal experiences.",
+                "Create a classroom debate topic around [Controversial Topic] with pros, cons, and guiding questions.",
+                "Make a short quiz with humor or pop culture references to test knowledge on [Subject/Topic].",
+                "Write an interactive storytelling script where students must make choices that teach them about [Ethical dilemma or Decision-based concept]."
+            ],
+            "🧠 Memory & Retention Techniques": [
+                "Create a spaced repetition flashcard set on [Topic] for Grades [X–Y] with simple explanations.",
+                "Design a mnemonic or rhyme to help students remember [Process/Formula/Set of Facts].",
+                "Write a song or rap explaining [Concept] in under 12 lines, suitable for a classroom performance.",
+                "Create a multi-sensory learning activity for students with ADHD or dyslexia, focused on [Topic].",
+                "Generate a set of retrieval practice questions on [Topic] that get progressively more challenging."
+            ],
+            "📊 Assessment & Feedback": [
+                "Write a 10-question formative assessment on [Topic] aligned with learning objectives and levels of Bloom’s Taxonomy.",
+                "Design a rubric for a project on [Topic] that includes criteria for creativity, accuracy, and collaboration.",
+                "Give constructive, student-friendly feedback on the following student answer: “[Student Response]”",
+                "Create two versions of an assessment on [Topic]: one for advanced students and one for learners who need support.",
+                "Generate reflection questions students can answer after completing a unit on [Topic] to assess their self-understanding."
+            ],
+            "🌎 Diverse & Inclusive Teaching": [
+                "Suggest ways to make a lesson on [Topic] culturally responsive and inclusive of different student backgrounds.",
+                "Write a lesson plan that integrates [Indigenous/Local culture] perspectives into [Subject].",
+                "Create a differentiated instruction strategy for teaching [Topic] to students with mixed reading levels.",
+                "Generate discussion prompts to teach empathy and perspective-taking using a story from [Region or Group].",
+                "Design a peer-teaching activity where multilingual students use their native languages to explain [Concept] collaboratively."
+            ],
+            "🛠️ Classroom Management & Planning": [
+                "Write a list of 10 positive, non-verbal classroom management techniques that help maintain focus.",
+                "Generate a time-saving daily planner template for teachers to organize lessons, assessments, and breaks.",
+                "Create a 5-minute “settling-down” routine for students after recess or lunch.",
+                "Suggest creative class jobs and a rotation system for student responsibility and ownership.",
+                "Write a calming script teachers can use to de-escalate a tense classroom moment."
+            ],
+            "🤝 Parent Communication & Collaboration": [
+                "Generate a friendly, informative parent newsletter template with sections for homework, tips, and upcoming events.",
+                "Draft a polite and empathetic message to a parent concerned about their child’s performance in [Subject].",
+                "Create a list of 5 meaningful ways parents can support learning at home for [Age Group].",
+                "Write a guide teachers can give to parents to help them talk about digital safety or screen time limits.",
+                "Design a parent-teacher conference checklist with tips for setting goals together."
+            ],
+            "🔍 AI + EdTech Integration": [
+                "Generate 5 ideas for using AI (like ChatGPT or tools like Canva, Kahoot) to make teaching [Topic] more interactive.",
+                "Design an AI-assisted student project where learners use tools like ChatGPT, Bing, or Google Bard to research and present on [Theme].",
+                "List 10 ways teachers can use AI to reduce planning workload without sacrificing personalization.",
+                "Create a classroom AI policy for Grades 6–12 that encourages ethical and creative use of generative tools.",
+                "Generate a reflective journal prompt for teachers exploring how AI is changing education, with guiding questions."
+            ]
+        };
+
+        const motivationalQuotes = [
+            "The art of teaching is the art of assisting discovery.",
+            "A good teacher can inspire hope, ignite the imagination, and instill a love of learning.",
+            "What the teacher is, is more important than what he teaches.",
+            "It is the supreme art of the teacher to awaken joy in creative expression and knowledge.",
+            "Teaching is the one profession that creates all other professions."
+        ];
+        
+        const generatorData = {
+            "🎯 Target Topic": { type: 'text', id: 'subject-input', placeholder: 'e.g., The American Revolution...' },
+            "🧮 Student Level": { type: 'select', id: 'level-select', options: ["Grade 1–3 (Early Primary)", "Grade 4–6 (Upper Primary)", "Grade 7–9 (Middle School)", "Grade 10–12 (High School)", "Undergraduate", "Mixed-ability / Inclusive", "Special Needs / Neurodivergent"] },
+            "⚡ Core Mission": { type: 'select', id: 'goal-select', options: ["Concept Introduction", "Concept Mastery", "Critical Thinking", "Skill Application", "Interdisciplinary Fusion", "Revision & Reinforcement", "Value/Ethics Integration"], prompt: (val) => `The primary goal is ${val}.` },
+            "🧠 Insane Method": { type: 'select', id: 'method-select', options: ["Gamified Story Quest", "Socratic Dialogue", "Role-Playing Simulation", "Digital Escape Room", "Project-Based Learning", "Time Travel Scenario", "Reverse Engineering Challenge"], prompt: (val) => `The lesson will be delivered as a ${val}.` },
+            "📝 Cognitive Skill": { type: 'select', id: 'cognitive-select', options: ["Memory & Recall", "Compare & Contrast", "Cause & Effect Reasoning", "Problem-Solving", "Analysis of Perspectives", "Prediction & Hypothesis", "Synthesis & Creativity"], prompt: (val) => `The task should target the cognitive skill of ${val}.` },
+            "🧐 Assessment Type": { type: 'select', id: 'assessment-select', options: ["Exit Ticket", "Concept Map", "3-2-1 Reflection", "Peer-Reviewed Project", "Google Form Quiz", "Mini Performance Task", "Visual Metaphor Explanation"], prompt: (val) => `Measure success with a/an ${val}.` },
+            "🎨 Learning Style": { type: 'select', id: 'style-select', options: ["Visual (charts, infographics)", "Auditory (podcasts, music)", "Kinesthetic (hands-on activity)", "Verbal (spoken or written expression)", "Social (group collaboration)", "Solitary (self-guided exploration)", "Multi-modal (integrated)"], prompt: (val) => `Design the lesson for a ${val} style.` },
+            "📤 Output Format": { type: 'select', id: 'format-select', options: ["Digital Poster / Infographic", "Short Video / Animation", "Written Journal or Blog Post", "Group Presentation (Live or Virtual)", "Artistic Interpretation (e.g., skit, song, visual art)", "AI-Assisted Report or Dialogue", "Physical Prototype or Model"], prompt: (val) => `Students will create a/an ${val}.` },
+            "🌱 Classroom Needs": { type: 'select', id: 'needs-select', options: ["Limited Tech Access", "Overcrowded Class", "Short Period (Time Crunch)", "Multi-lingual Learners", "Emotional Regulation Support", "Hybrid / Blended Format", "Post-Holiday Energy Boost"], prompt: (val) => `The activity must address the need for ${val}.` },
+            "⏳ Duration": { type: 'select', id: 'duration-select', options: ["10 Minutes (Quick Starter)", "One Period (40–60 mins)", "Double Period Block", "Multi-day Unit", "Weekly Project Sprint", "Monthly Capstone", "Ongoing Integration"], prompt: (val) => `The activity should have a duration of ${val}.` },
+            "🧩 Grouping Strategy": { type: 'select', id: 'grouping-select', options: ["Solo Exploration", "Pairs / Partner Dialogues", "Randomized Groups", "Ability-Based Teams", "Choice-Based Pods", "Rotating Stations", "Jigsaw Collaborative Learning"], prompt: (val) => `Organize learners into ${val}.` },
+            "ℹ️ Additional Information": { type: 'textarea', id: 'additional-info-input', placeholder: 'e.g., Ensure the activity is fun and gamified...', prompt: (val) => `Also, please consider the following: ${val}` },
+        };
+
+        // --- FUNCTIONS ---
+        function handleMouseMove(e) {
+            if (!backgroundGlow) return;
+            backgroundGlow.style.transform = `translate(${e.clientX - 600}px, ${e.clientY - 600}px)`;
+        }
+
+        function createFilterControl(key, data) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex flex-col space-y-2';
+            
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between';
+            
+            const label = document.createElement('label');
+            label.htmlFor = data.id;
+            label.className = 'text-sm font-medium text-blue-300';
+            label.textContent = key;
+            
+            const toggleLabelWrapper = document.createElement('label');
+            toggleLabelWrapper.className = 'relative inline-flex items-center cursor-pointer';
+            toggleLabelWrapper.htmlFor = `toggle-${data.id}`;
+
+            const toggleInput = document.createElement('input');
+            toggleInput.type = 'checkbox';
+            toggleInput.id = `toggle-${data.id}`;
+            toggleInput.className = 'sr-only peer';
+            toggleInput.checked = true;
+            
+            const toggleVisual = document.createElement('div');
+            toggleVisual.className = "w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-500/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600";
+            
+            toggleLabelWrapper.appendChild(toggleInput);
+            toggleLabelWrapper.appendChild(toggleVisual);
+            header.append(label, toggleLabelWrapper);
+            
+            let inputControl;
+            if (data.type === 'select') {
+                inputControl = document.createElement('select');
+                inputControl.id = data.id;
+                inputControl.className = 'generator-select w-full p-3 rounded-lg';
+                data.options.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    inputControl.appendChild(option);
+                });
+            } else if (data.type === 'textarea') {
+                 inputControl = document.createElement('textarea');
+                 inputControl.id = data.id;
+                 inputControl.placeholder = data.placeholder;
+                 inputControl.className = 'w-full p-3 rounded-lg h-24 resize-none';
+            }
+            else { // text input
+                inputControl = document.createElement('input');
+                inputControl.type = 'text';
+                inputControl.id = data.id;
+                inputControl.placeholder = data.placeholder;
+                inputControl.className = 'w-full p-3 rounded-lg';
+                if(data.datalist) {
+                    inputControl.setAttribute('list', `${data.id}-list`);
+                    const datalist = document.createElement('datalist');
+                    datalist.id = `${data.id}-list`;
+                    data.datalist.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item;
+                        datalist.appendChild(option);
+                    });
+                    wrapper.appendChild(datalist);
+                }
+            }
+
+            toggleInput.addEventListener('change', () => {
+                inputControl.disabled = !toggleInput.checked;
+            });
+            
+            wrapper.append(header, inputControl);
+            return wrapper;
+        }
+
+        function setupGenerator() {
+            if (!synthesizerFilters) return;
+            synthesizerFilters.innerHTML = '';
+            for (const [key, data] of Object.entries(generatorData)) {
+                const control = createFilterControl(key, data);
+                synthesizerFilters.appendChild(control);
+            }
+        }
+        
+        function generateCustomPrompt() {
+            let promptParts = [];
+            let studentLevel = '';
+            let targetTopic = '';
+
+            for (const [key, data] of Object.entries(generatorData)) {
+                 const toggle = document.getElementById(`toggle-${data.id}`);
+                 if (toggle && !toggle.checked) continue;
+
+                 const inputElement = document.getElementById(data.id);
+                 if (!inputElement || inputElement.disabled) continue;
+
+                 const value = inputElement.value.trim();
+                 if (!value || value === "None") continue;
+
+                 if (data.id === 'subject-input') {
+                     targetTopic = value;
+                     continue;
+                 }
+                 if (data.id === 'level-select') {
+                     studentLevel = value;
+                     continue;
+                 }
+
+                 if (data.prompt) {
+                     promptParts.push(data.prompt(value));
+                 }
+            }
+            
+            let finalPrompt = `Design a lesson for ${studentLevel || '[Specify Level]'} students. `;
+            if(targetTopic) {
+                finalPrompt += `The primary topic is "${targetTopic}". `
+            }
+            
+            finalPrompt += promptParts.join(' ');
+            finalPrompt += " Ensure the result is creative, engaging, and pushes pedagogical boundaries."
+
+            customOutputText.value = finalPrompt;
+            customOutputContainer.classList.remove('hidden');
+            copyCustomBtn.textContent = 'Copy';
+        }
+
+        function copyToClipboard(textToCopy, buttonElement) {
+            if (!textToCopy) return;
+
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            tempTextArea.style.position = 'absolute';
+            tempTextArea.style.left = '-9999px';
+            document.body.appendChild(tempTextArea);
+
+            try {
+                tempTextArea.select();
+                document.execCommand('copy');
+                if(buttonElement) buttonElement.textContent = 'Copied!';
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                if(buttonElement) buttonElement.textContent = 'Failed!';
+            } finally {
+                document.body.removeChild(tempTextArea);
+                if(buttonElement){
+                     setTimeout(() => {
+                        buttonElement.textContent = 'Copy';
+                    }, 2000);
+                }
+            }
+        }
+        
+        function openModal(modalElement) {
+            if (!modalElement) return;
+            modalElement.classList.remove('hidden');
+            const modalContent = modalElement.querySelector('.modal-content');
+            setTimeout(() => {
+                 modalContent.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+        }
+
+        function closeModal(modalElement) {
+            if (!modalElement) return;
+            const modalContent = modalElement.querySelector('.modal-content');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modalElement.classList.add('hidden');
+            }, 300);
+        }
+
+        // --- Timetable Generation Logic ---
+        function createTimetable() {
+            const days = parseInt(document.getElementById('workDays').value) || 5;
+            const periods = parseInt(document.getElementById('periodsPerDay').value) || 8;
+            const lunchPeriod = parseInt(document.getElementById('lunchPeriod').value);
+
+            // 1. Parse Inputs
+            const subjectsFreqText = document.getElementById('subjectsInput').value;
+            const teachersText = document.getElementById('teachersInput').value;
+
+            const subjectPool = [];
+            const subjectsList = [];
+            const lineSeparated = subjectsFreqText.replace(/,/g, '\n');
+            lineSeparated.split('\n').forEach(line => {
+                const parts = line.split(':');
+                if (parts.length === 2) {
+                    const subjectName = parts[0].trim();
+                    const freq = parseInt(parts[1].trim());
+                    if (subjectName && !isNaN(freq)) {
+                        if(!subjectsList.includes(subjectName)) subjectsList.push(subjectName);
+                        for (let i = 0; i < freq; i++) {
+                            subjectPool.push(subjectName);
+                        }
+                    }
+                }
+            });
+            
+            const teacherAbilities = {};
+            const teachersList = [];
+            teachersText.split('\n').forEach(line => {
+                const parts = line.split(':');
+                if(parts.length === 2) {
+                    const teacherName = parts[0].trim();
+                    const subjects = parts[1].split(',').map(s => s.trim());
+                    if(teacherName) {
+                        if(!teachersList.includes(teacherName)) teachersList.push(teacherName);
+                        teacherAbilities[teacherName] = new Set(subjects);
+                    }
+                }
+            });
+
+            if (subjectPool.length === 0 || teachersList.length === 0) {
+                timetableOutput.innerHTML = '<p class="text-red-400 text-center">Please provide subjects and teachers in the correct format.</p>';
+                return;
+            }
+
+            // 2. Initialize Grids
+            let timetable = Array(days).fill(null).map(() => Array(periods).fill(null));
+            let teacherSchedule = {};
+            teachersList.forEach(t => teacherSchedule[t] = Array(days).fill(null).map(() => Array(periods).fill(false)));
+            
+            // 3. Place Lunch Break
+            if (lunchPeriod > 0) {
+                for (let day = 0; day < days; day++) {
+                    timetable[day][lunchPeriod - 1] = { subject: 'LUNCH', teacher: 'BREAK' };
+                }
+            }
+            
+            // 4. Schedule Classes
+            shuffleArray(subjectPool);
+            
+            for (let day = 0; day < days; day++) {
+                for (let period = 0; period < periods; period++) {
+                    if (timetable[day][period]) continue; // Skip if already filled (e.g., lunch)
+
+                    let placed = false;
+                    for (let i = 0; i < subjectPool.length; i++) {
+                        const subject = subjectPool[i];
+                        const qualifiedTeachers = teachersList.filter(t => teacherAbilities[t] && teacherAbilities[t].has(subject));
+                        const availableTeachers = qualifiedTeachers.filter(t => !teacherSchedule[t][day][period]);
+
+                        if (availableTeachers.length > 0) {
+                            const teacher = availableTeachers[Math.floor(Math.random() * availableTeachers.length)];
+                            timetable[day][period] = { subject, teacher };
+                            teacherSchedule[teacher][day][period] = true;
+                            subjectPool.splice(i, 1); // Remove from pool
+                            placed = true;
+                            break;
+                        }
+                    }
+                    if(!placed) {
+                        timetable[day][period] = { subject: 'FREE', teacher: '' };
+                    }
+                }
+            }
+
+            // 5. Render
+            renderTimetable(timetable, lunchPeriod);
+            
+            const unscheduledDiv = document.getElementById('unscheduled-classes');
+            if (subjectPool.length > 0) {
+                 unscheduledDiv.innerHTML = `<h4 class="text-lg text-red-400 font-bold">Could not schedule:</h4><p class="text-gray-300">${subjectPool.join(', ')}</p>`;
+            } else {
+                 unscheduledDiv.innerHTML = '<p class="text-green-400 font-semibold">All classes scheduled successfully!</p>';
+            }
+        }
+        
+        function renderTimetable(timetable, lunchPeriod) {
+            const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].slice(0, timetable.length);
+            let tableHTML = '<table class="w-full text-sm text-left text-gray-300 border-collapse border border-gray-700">';
+            tableHTML += '<thead class="text-xs text-blue-300 uppercase bg-gray-700/50">';
+            tableHTML += '<tr><th scope="col" class="px-4 py-3 border border-gray-700">Day</th>';
+            for (let i = 1; i <= timetable[0].length; i++) {
+                tableHTML += `<th scope="col" class="px-4 py-3 border border-gray-700 text-center">Period ${i}</th>`;
+            }
+            tableHTML += '</tr></thead><tbody>';
+
+            timetable.forEach((daySchedule, dayIndex) => {
+                tableHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-2 font-medium text-white whitespace-nowrap border border-gray-700">${daysOfWeek[dayIndex]}</td>`;
+                daySchedule.forEach((period, periodIndex) => {
+                    let cellClass = 'border border-gray-700 px-2 py-2 text-center';
+                    if ((periodIndex + 1) === lunchPeriod) {
+                        cellClass += ' bg-gray-700 lunch-period';
+                    }
+                    
+                    tableHTML += `<td class="${cellClass}">`;
+                    if (period) {
+                        const colorClass = period.subject === 'LUNCH' ? 'text-yellow-400' : period.subject === 'FREE' ? 'text-gray-500' : 'text-white';
+                        tableHTML += `<div class="font-semibold ${colorClass}">${period.subject}</div><div class="text-xs text-gray-400">${period.teacher}</div>`;
+                    }
+                    tableHTML += '</td>';
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody></table>';
+            timetableOutput.innerHTML = tableHTML;
+        }
+
+        function updateLunchPeriodOptions() {
+             const periods = parseInt(document.getElementById('periodsPerDay').value) || 8;
+             lunchPeriodSelect.innerHTML = '<option value="0">No Break</option>';
+             for(let i=1; i <= periods; i++) {
+                 const option = document.createElement('option');
+                 option.value = i;
+                 option.textContent = `After Period ${i}`;
+                 lunchPeriodSelect.appendChild(option);
+             }
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function updateQuote() {
+            if (!quoteDisplay) return;
+            const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+            quoteDisplay.textContent = `"${motivationalQuotes[randomIndex]}"`;
+        }
+        
+        function renderPrebuiltPrompts() {
+            if (!prebuiltPromptsGrid) return;
+            prebuiltPromptsGrid.innerHTML = '';
+            for (const category in prebuiltPrompts) {
+                const accordionItem = document.createElement('div');
+                accordionItem.className = 'bg-gray-800/50 rounded-lg';
+
+                const button = document.createElement('button');
+                button.className = 'w-full text-left p-4 font-semibold text-blue-300 flex justify-between items-center';
+                button.innerHTML = `<span>${category}</span><svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+                
+                const content = document.createElement('div');
+                content.className = 'hidden p-4 border-t border-gray-700 space-y-2';
+
+                prebuiltPrompts[category].forEach(promptText => {
+                    const p = document.createElement('p');
+                    p.className = 'text-gray-300 p-3 rounded-md bg-gray-900/50 prebuilt-prompt-item';
+                    p.textContent = promptText;
+                    
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'copy-prebuilt-btn bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-1 px-2 rounded';
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.onclick = () => copyToClipboard(promptText, copyBtn);
+                    
+                    p.appendChild(copyBtn);
+                    content.appendChild(p);
+                });
+
+                button.onclick = () => {
+                    content.classList.toggle('hidden');
+                    button.querySelector('svg').classList.toggle('rotate-180');
+                };
+
+                accordionItem.appendChild(button);
+                accordionItem.appendChild(content);
+                prebuiltPromptsGrid.appendChild(accordionItem);
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        document.addEventListener('mousemove', handleMouseMove);
+        
+        customGenerateBtn?.addEventListener('click', generateCustomPrompt);
+        copyCustomBtn?.addEventListener('click', () => copyToClipboard(customOutputText.value, copyCustomBtn));
+        
+        // Timetable Listeners
+        openTimetableBtn?.addEventListener('click', () => {
+            updateLunchPeriodOptions();
+            openModal(timetableModal);
+        });
+        document.getElementById('periodsPerDay')?.addEventListener('change', updateLunchPeriodOptions);
+        closeTimetableModalBtn?.addEventListener('click', () => closeModal(timetableModal));
+        timetableModal?.addEventListener('click', (e) => {
+            if(e.target === timetableModal) closeModal(timetableModal);
+        });
+        generateTimetableBtn?.addEventListener('click', createTimetable);
+        printTimetableBtn?.addEventListener('click', () => window.print());
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupGenerator();
+            renderPrebuiltPrompts();
+            updateQuote();
+            setInterval(updateQuote, 5000);
+        });
+    </script>
+</body>
+</html>
